@@ -2,6 +2,7 @@
  AI-powered newsletter automation system built with [n8n](https://n8n.io). It enables dynamic content curation using live news, academic research, and GPT-based agents — fully automated from input to email delivery.
 
 ---
+![image](https://github.com/user-attachments/assets/12d49919-ed91-48a0-9f3b-cd5d4a40c51d)
 
 ## 📦 Included Workflows
 
