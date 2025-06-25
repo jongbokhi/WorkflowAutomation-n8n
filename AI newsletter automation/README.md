@@ -1,6 +1,5 @@
-# 📰 AI Newsletter Automation with n8n
-
-This repository contains a modular, AI-powered newsletter automation system built with [n8n](https://n8n.io). It enables dynamic content curation using live news, academic research, and GPT-based agents — fully automated from input to email delivery.
+# 📰 AI Newsletter Automation
+ AI-powered newsletter automation system built with [n8n](https://n8n.io). It enables dynamic content curation using live news, academic research, and GPT-based agents — fully automated from input to email delivery.
 
 ---
 
