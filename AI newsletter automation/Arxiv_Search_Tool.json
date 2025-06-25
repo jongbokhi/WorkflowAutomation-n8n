@@ -1,0 +1,114 @@
+{
+  "name": "Arxiv Search Tool",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -520,
+        -20
+      ],
+      "id": "b820b2fb-e703-45a1-b9a1-31871f17e7ad",
+      "name": "Workflow Input Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1ae0dd90-d1d0-494b-bd8b-1ef335f0bd8f",
+              "name": "response",
+              "value": "=[Paper 1]\nTitle: {{ $json.result[0].title }}\nSummary:{{ $json.result[0].summary }}\nPublished:{{ $json.result[0].published }}\nAuthors:{{ $json.result[0].authors }}\nLink:{{ $json.result[0].link }}\n\n[Paper 2]\nTitle: {{ $json.result[1].title }}\nSummary:{{ $json.result[1].summary }}\nPublished:{{ $json.result[1].published }}\nAuthors:{{ $json.result[1].authors }}\nLink:{{ $json.result[1].link }}\n\n[Paper 3]\nTitle: {{ $json.result[2].title }}\nSummary:{{ $json.result[2].summary }}\nPublished:{{ $json.result[2].published }}\nAuthors:{{ $json.result[2].authors }}\nLink:{{ $json.result[2].link }}\n\n[Paper 4]\nTitle: {{ $json.result[3].title }}\nSummary:{{ $json.result[3].summary }}\nPublished:{{ $json.result[3].published }}\nAuthors:{{ $json.result[3].authors }}\nLink:{{ $json.result[3].link }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        140,
+        -20
+      ],
+      "id": "18962b10-08a4-44f8-bf84-400668509c97",
+      "name": "response"
+    },
+    {
+      "parameters": {
+        "url": "http://export.arxiv.org/api/query?search_query=all:AI&start=0&max_results=5&sortBy=submittedDate&sortOrder=descending",
+        "options": {}
+      },
+      "id": "25ca7ca6-b64f-4611-984c-db0ed163eb0f",
+      "name": "Arxiv",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -300,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawXml = $json.data;\n\nconst entries = rawXml.split('<entry>').slice(1);\n\nconst results = entries.map(entry => {\n  const getTag = (tag) => {\n    const match = entry.match(new RegExp(`<${tag}>([\\\\s\\\\S]*?)</${tag}>`));\n    return match ? match[1].trim() : '';\n  };\n\n  const title = getTag('title');\n  const summary = getTag('summary');\n  const published = getTag('published');\n  const id = getTag('id');\n  const authors = [...entry.matchAll(/<name>(.*?)<\\/name>/g)].map(a => a[1]).join(', ');\n\n  return {\n    title,\n    summary,\n    published,\n    link: id,\n    authors\n  };\n});\n\n// 결과 전체를 result 배열로 묶어서 단일 item으로 반환\nreturn [\n  {\n    json: {\n      result: results\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -80,
+        -20
+      ],
+      "id": "2c5555c4-314b-420b-913c-2c7304135e3a",
+      "name": "Code"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Workflow Input Trigger": {
+      "main": [
+        [
+          {
+            "node": "Arxiv",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Arxiv": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8510286b-116c-4cbd-89d6-a5d94f3dfcda",
+  "meta": {
+    "instanceId": "9570c26e5672a134a4778d5f8acd3c6accfb99ebecf42e53c77dc41368cf2d0a"
+  },
+  "id": "POaz175GefahWvdb",
+  "tags": []
+}
