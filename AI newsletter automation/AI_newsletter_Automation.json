@@ -1,0 +1,649 @@
+{
+  "name": "AI newsletter Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Newsletter Submission Form",
+        "formDescription": "Provides a structured newsletter based on the following fields.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Topic",
+              "placeholder": "AI agent",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target Audience",
+              "placeholder": "AI agent develop team",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        280
+      ],
+      "id": "dbbfd6e2-8571-4b37-9a87-64ce8e48b6d1",
+      "name": "On form submission",
+      "webhookId": "601ecf4e-f41a-4796-a6a5-bcb0bc8af95d"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        520
+      ],
+      "id": "4fa37691-2e18-457e-a852-2414e2cfbbd1",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "jJP6hlZS5Z3QEF3b",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Newsletter Topic: {{ $json.Topic }}\nNewsletter Target Audience: {{ $json['Target Audience'] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# Overview  \nYou are an AI agent responsible for planning the sections of a newsletter by creating an engaging table of contents tailored to the newsletter's topic and target audience.  \n\n## Context  \n- The newsletter will vary in topic and target audience depending on the request.  \n- Your task is to use the \"tavily\" tool to search for relevant topics news and craft a high-level, engaging table of contents.  \n- Your task is to use the \"arxiv\" tool to search for latest papers related in topics and craft a high-level, engaging table of contents.  \n- The table of contents should resonate with the target audience and encourage them to read the full newsletter.  \n\n## Instructions  \n1. Analyze the incoming information, including the newsletter topic and target audience details.  \n2. Use the \"tavily\" tool to research relevant and trending subtopics related to the main newsletter topic.  \n3. Use the \"arxiv\" tool to research relevant and trending papers related to the main newsletter topic. \n3. Based on your findings, create a table of contents with high-level, engaging and latest topics tailored to the target audience.  \n4. Ensure the topics align with the newsletter's topic and are structured to maintain the reader's interest.  \n5. Include brief descriptions for each section if requested.  \n\n## Tools  \n- tavily tool for internet research of news related in topic\n- arxiv tool for research of papers related in topic\n- Predefined audience profiles (if provided)  \n\n## OUTPUT FORMAT\n  [News] \n  1.\"title\"\n  - \"content\"\n  - \"url\"\n  2.\"title\"\n  - \"content\"\n  - \"url\"\n  3.\"title\"\n  - \"content\"\n  - \"url\"\n  4.\"title\"\n  - \"content\"\n  - \"url\"\n  5.\"title\"\n  - \"content\"\n  - \"url\"\n\n[Papers] \n  1. \"title\"\n  2. \"title\"\n  3. \"title\"\n  4. \"title\"\n  5. \"title\"\n\n## SOP (Standard Operating Procedure)  \n1. Review the provided details about the newsletter's topic and target audience.  \n2. Use the \"tavily\" tool to search for trending, relevant, and engaging subtopics.  \n3. Use the \"arxiv\" tool to search for the latest and trending papers related in topics.\n4. In case of paper's summary, make a brief for readers. \n5. Brainstorm 4-6 high-level topics that fit within the theme of the newsletter and appeal to the target audience.  \n6. Verify that each section aligns with the goals of the newsletter.  \n7. Finalize the table of contents and, if requested, provide brief descriptions for each section.  \n\n## Final Notes  \n- Keep the topics concise and engaging to maximize interest.  \n- choice of topics to suit the specific audience profile.  \n- Always aim for a balance of informative and engaging content to maintain readership.  \n---  \nHere is the current date {{ $now }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        240,
+        280
+      ],
+      "id": "23e17d61-6304-4acc-9c73-102636738515",
+      "name": "Newsletter Expert"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=Your task is to split out the table of contents into an individual item for each section. Output each section separately in a field called \"newsletterSections\" and \"paperSection\". When doing so, keep in mind that the newsletter target audience is {{ $('On form submission').item.json['Target Audience'] }} and the tone of the newsletter should be professional.\n\nHere is the table of contents: {{ $json.output }}\n",
+              "role": "system"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        580,
+        280
+      ],
+      "id": "76f318f1-6372-4bf7-acaf-ec636e934917",
+      "name": "Project Planner",
+      "credentials": {
+        "openAiApi": {
+          "id": "jJP6hlZS5Z3QEF3b",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output",
+              "renameField": true,
+              "outputFieldName": "news"
+            }
+          ]
+        },
+        "options": {
+          "mergeLists": true
+        }
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1800,
+        140
+      ],
+      "id": "76d9cb30-be55-44f8-9fa7-dcc8d3fb8afd",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is the given information:\nNews: {{ $json.news }}\nPapers: {{ $json.papers }}",
+        "options": {
+          "systemMessage": "=## Overview\n\nYou are an expert editor specializing in creating and refining content to output a high quality, formatted article. You are given a list of outputs and you will use these to create a newsletter tailored towards the defined target audience. Create a News section and Paper section in the article for each title, with a hyperlinked source in each section based on the content.\n\n## Objective\n\n1. Create content for each title using the provided content\n2. Each news and paper should contain link. *Don't leave any out*\n3. Verify all links are functional\n4. Improve the flow of the newsletter and format it for readability\n\n## Output Format\n\nThe newsletter should be structured as HTML like below and  that will be sent through email:\n\n- Do not output a title or an introduction, the output should start with the first article heading\n- Main content with hyperlink citations in each section.\n- Headers for each section of the article\n\n[News]\n1. Title \n- brief summary\n-link\n2. Title \n- brief summary\n-link\n3. Title \n- brief summary\n-link\n4. Title \n- brief summary\n-link\n\n[Papers]\n1. Title \n- brief summary\n-link\n2. Title \n- brief summary\n-link\n3. Title \n- brief summary\n-link\n4. Title \n- brief summary\n-link\n\n## Important\n\nOutput 1000 words maximum or else the automation breaks!"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        2140,
+        220
+      ],
+      "id": "07a997ab-a760-4317-80ca-c7f94bebc0ad",
+      "name": "Editor"
+    },
+    {
+      "parameters": {
+        "name": "tavily",
+        "description": "Call this tool to search the internet\n",
+        "workflowId": {
+          "__rl": true,
+          "value": "bOiu6urODa2xZaXG",
+          "mode": "list",
+          "cachedResultName": "Tavily Search Tool"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2,
+      "position": [
+        860,
+        560
+      ],
+      "id": "1757de37-1e85-42a1-99e8-b576759aa852",
+      "name": "tavily"
+    },
+    {
+      "parameters": {
+        "content": "# AI Newsletter Automation\n\n",
+        "height": 740,
+        "width": 2840,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -40,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "49740b1b-e87e-4b6b-9b54-4a3b04818e40",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "Search Tools\n",
+        "height": 180,
+        "width": 380,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        640,
+        520
+      ],
+      "typeVersion": 1,
+      "id": "34f5fe19-948e-4557-96c6-ddc1786e26b3",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1980,
+        580
+      ],
+      "id": "776e8470-974e-43c3-aa72-68786a5d22a9",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "jJP6hlZS5Z3QEF3b",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Call this tool to search the paper\n",
+        "workflowId": {
+          "__rl": true,
+          "value": "2cjxiRHBSKF60Fdf",
+          "mode": "list",
+          "cachedResultName": "Arxiv Search Tool"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        700,
+        560
+      ],
+      "id": "e254559e-e86b-4ce6-9a14-d2f5620d8784",
+      "name": "Arxiv"
+    },
+    {
+      "parameters": {
+        "sendTo": "jongbok.data0319@gmail.com",
+        "subject": "=AI Newsletter",
+        "message": "={{ $('Editor').item.json.output }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Daily Newsletter"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2440,
+        220
+      ],
+      "id": "8f8298a3-d092-402a-bbe3-81e6a9f25a91",
+      "name": "Send Newsletter1",
+      "webhookId": "29749774-2e18-464a-b4a8-344157232212",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1CnySkmpNK0zn1zA",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "message.content.newsletterSections",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        900,
+        180
+      ],
+      "id": "5872ee36-af3c-44b5-a764-53c5db4ae585",
+      "name": "News Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0e26d403-4abc-4c2a-87df-6c77be3e7b05",
+              "name": "type",
+              "value": "news",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1140,
+        140
+      ],
+      "id": "a44ab316-5081-470e-af1b-6866d1650f5d",
+      "name": "News Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e30c6e67-32fe-41f3-af32-6153f1c77de6",
+              "name": "type",
+              "value": "paper",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1140,
+        340
+      ],
+      "id": "52b668a5-d83a-480c-ac35-52c3bd038c0c",
+      "name": "Paper Edit Fields"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "message.content.paperSections",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        900,
+        340
+      ],
+      "id": "3a65c498-7721-48ab-a26e-96135f6eea8f",
+      "name": "Paper Split Out"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is the given information. \n\n[News]\nNews Title: {{ $json.headline }}\n\nNews Description: {{ $json.description }}\nNews Link: {{ $json.link }}\nNewsletter Target Audience: {{ $('On form submission').item.json['Target Audience'] }}",
+        "options": {
+          "systemMessage": "=# Overview\n\nYou are an AI agent responsible for making useful newsletter. Your task is to produce concise, well-researched, and audience-tailored content based solely on the provided inputs, with no prefacing statements or explanations.\n\n## Context\n\n- All necessary details, including the section title, description, target audience will be provided.\n- The goal is to create engaging content that aligns with the audience's expectations and the newsletter's objectives.\n- Content must be supported by research, with sources clearly cited using hyperlinks.\n\n## Instructions\n\n1. Write the final content without including any introductory or concluding remarks about the writing process.\n2. Use the provided inputs to craft a focused section tailored to the target audience.\n3. Make   clearly “News” section\n4. Include links for each content.\n5. Use only given information.\n\n## Citation Guidelines\n\n- For each news, include a hyperlinked inline citation\n- Format citations as HTML links with descriptive text:\n<a href=\"[URL]\">[Source: Publication Name]</a>\n\n## Output Format\n\n[News]\n1. {{ $json.headline }}\n- {{ $json.description }}\n- {{ $json.link }}\n2. {{ $json.headline }}\n- {{ $json.description }}\n- {{ $json.link }}\n3. {{ $json.description }}\n- {{ $json.description }}\n- {{ $json.link }}\n4. {{ $json.headline }}\n- {{ $json.description }}\n- {{ $json.link }}\n\n## Final Notes\n\n- The output must follow the given format.\n- Focus on delivering value and ensuring readability for the target audience."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1440,
+        140
+      ],
+      "id": "87fcb1d8-fea6-4494-848e-055966ca4ad7",
+      "name": "News Research Team"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here is the given information. \n\n[Papers]\nPaper Title: {{ $json.title }}\n\nPaper Description: {{ $json.description }}\n\nPaper link: {{ $json.link }}\n\nNewsletter Target Audience: {{ $('On form submission').item.json['Target Audience'] }}",
+        "options": {
+          "systemMessage": "=# Overview\n\nYou are an AI agent responsible for making useful newsletter. Your task is to produce concise, well-researched, and audience-tailored content based solely on the provided inputs, with no prefacing statements or explanations.\n\n## Context\n\n- All necessary details, including the section title, description, target audience will be provided.\n- The goal is to create engaging content that aligns with the audience's expectations and the newsletter's objectives.\n- Content must be supported by research, with sources clearly cited using hyperlinks.\n\n## Instructions\n\n1. Write the final content without including any introductory or concluding remarks about the writing process.\n2. Use the provided inputs to craft a focused section tailored to the target audience.\n3. Make   clearly “Papers” section\n4. Include links for each content.\n5. Use only given information.\n\n## Citation Guidelines\n\n- For each paper, include a hyperlinked inline citation\n- Format citations as HTML links with descriptive text:\n<a href=\"[URL]\">[Source: Publication Name]</a>\n\n## Output Format\n[Papers]\n1. [Title] {{ $json.headline }}\n- [summary] brief {{ $json.description }}\n-[link] {{ $json.link }}\n2. [Title] {{ $json.headline }}\n- [summary] brief {{ $json.description }}\n-[link] {{ $json.link }}\n3. [Title] {{ $json.headline }}\n- [summary] brief {{ $json.description }}\n-[link] {{ $json.link }}\n4. [Title] {{ $json.headline }}\n- [summary] brief {{ $json.description }}\n-[link] {{ $json.link }}\n\n## Final Notes\n\n- The output must follow the given format.\n- Focus on delivering value and ensuring readability for the target audience."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1440,
+        340
+      ],
+      "id": "421e8cbd-6afc-4656-a328-d7f8e75e26f1",
+      "name": "Paper Research Team"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output",
+              "renameField": true,
+              "outputFieldName": "papers"
+            }
+          ]
+        },
+        "options": {
+          "mergeLists": true
+        }
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1820,
+        340
+      ],
+      "id": "600a138e-3708-4643-bac2-9fb2d1b835f0",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "mode": "combineBySql",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1980,
+        220
+      ],
+      "id": "e0dfd29b-50cb-405c-a287-a4316e34253d",
+      "name": "Merge"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Newsletter Expert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Newsletter Expert",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Newsletter Expert": {
+      "main": [
+        [
+          {
+            "node": "Project Planner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Project Planner": {
+      "main": [
+        [
+          {
+            "node": "News Split Out",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Paper Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Editor": {
+      "main": [
+        [
+          {
+            "node": "Send Newsletter1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tavily": {
+      "ai_tool": [
+        [
+          {
+            "node": "Newsletter Expert",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "News Research Team",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Editor",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Paper Research Team",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Arxiv": {
+      "ai_tool": [
+        [
+          {
+            "node": "Newsletter Expert",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Split Out": {
+      "main": [
+        [
+          {
+            "node": "News Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "News Research Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Paper Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Paper Research Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Paper Split Out": {
+      "main": [
+        [
+          {
+            "node": "Paper Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "News Research Team": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Paper Research Team": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Editor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4c7d8acb-0d7a-41ad-b5a6-8a853abfe081",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cf7539ebc8387761512a2e52efc6fc1aa01b8ab431d3fd6d364b678398a1c491"
+  },
+  "id": "3HIGHlcGbC1cMVag",
+  "tags": []
+}
